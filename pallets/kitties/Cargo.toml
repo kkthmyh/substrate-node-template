@@ -54,6 +54,14 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'devhub/latest'
 version = '4.0.0-dev'
 
+[dependencies.serde]
+default-features = false
+version = '1.0.119'
+
+[dependencies.log]
+default-features = false
+version = '0.4.14'
+
 [dev-dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
