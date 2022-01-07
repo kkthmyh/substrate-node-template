@@ -88,19 +88,15 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             // 随机生成DNA
             let dna = Self::random_value(&who);
-            // 创建+质押Kitty
+            // 创建kitty时质押一定数量的token
             Self::create_kitty_with_stake(&who, dna)
         }
 
         // 繁殖
         #[pallet::weight(0)]
-        pub fn breed(
-            origin: OriginFor<T>,
-            kitty_id_1: T::KittyIndex,
-            kitty_id_2: T::KittyIndex,
-        ) -> DispatchResult {
+        pub fn breed(origin: OriginFor<T>, kitty_id_1: T::KittyIndex, kitty_id_2: T::KittyIndex) -> DispatchResult {
             let who = ensure_signed(origin)?;
-            // 繁殖不能是同一个Kitty
+            // parent_id 不能相同
             ensure!(kitty_id_1 != kitty_id_2, Error::<T>::SameParentIndex);
             // 获取Kitty1
             let kitty1 = Self::kitties(kitty_id_1).ok_or(Error::<T>::InvalidKittyIndex)?;
@@ -116,7 +112,7 @@ pub mod pallet {
             for i in 0..dna_1.len() {
                 new_dna[i] = (selector[i] & dna_1[i]) | (!selector[i] & dna_2[i]);
             }
-            // 质押+创建Kitty
+            // 创建kitty时质押一定数量的token
             Self::create_kitty_with_stake(&who, new_dna)
         }
 
@@ -124,11 +120,11 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn sell(origin: OriginFor<T>, kitty_id: T::KittyIndex, price: Option<BalanceOf<T>>) -> DispatchResult {
             let who = ensure_signed(origin)?;
-            // 检查是否有权限卖出
+            // 校验发起方是否是该kitty的所有者
             ensure!(Some(who.clone()) == Owner::<T>::get(kitty_id), Error::<T>::NotOwner);
             // 将Kitty添加到出售列表
             ListForSale::<T>::insert(kitty_id, price);
-            // 发出Kitty卖出事件
+            // 发出卖出事件
             Self::deposit_event(Event::KittyListed(who, kitty_id, price));
             Ok(())
         }
@@ -143,8 +139,7 @@ pub mod pallet {
             // 获取质押金额
             let stake_amount = T::StakeForEachKitty::get();
             // 质押新的拥有者一定金额
-            T::Currency::reserve(&new_owner, stake_amount)
-                .map_err(|_| Error::<T>::NotEnoughBalanceForStaking)?;
+            T::Currency::reserve(&new_owner, stake_amount).map_err(|_| Error::<T>::NotEnoughBalanceForStaking)?;
             // 解除旧拥有者的质押
             T::Currency::unreserve(&who, stake_amount);
             // 更新Kitty的所有者为新的拥有者
@@ -169,13 +164,9 @@ pub mod pallet {
             // 质押的金额
             let stake_amount = T::StakeForEachKitty::get();
             // 检查买家余额是否足够
-            ensure!(
-				buyer_balance > (kitty_price + stake_amount),
-				Error::<T>::NotEnoughBalanceForBuying
-			);
+            ensure!(buyer_balance > (kitty_price + stake_amount),Error::<T>::NotEnoughBalanceForBuying);
             // 质押新的拥有者一定金额
-            T::Currency::reserve(&buyer, stake_amount)
-                .map_err(|_| Error::<T>::NotEnoughBalanceForStaking)?;
+            T::Currency::reserve(&buyer, stake_amount).map_err(|_| Error::<T>::NotEnoughBalanceForStaking)?;
             // 解除旧拥有者的质押
             T::Currency::unreserve(&seller, stake_amount);
             // 买家向卖家转账
@@ -191,6 +182,7 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        // 随机生成DNA
         fn random_value(sender: &T::AccountId) -> [u8; 16] {
             let payload = (
                 T::Randomness::random_seed(),
@@ -200,8 +192,9 @@ pub mod pallet {
             payload.using_encoded(blake2_128)
         }
 
+        // 创建kitty时质押一定数量的token
         fn create_kitty_with_stake(owner: &T::AccountId, dna: [u8; 16]) -> DispatchResult {
-            // Child Kitty的ID
+            // 获取当前的kitty_id
             let kitty_id = match Self::kitties_count() {
                 Some(id) => {
                     ensure!(id != T::KittyIndex::max_value(), Error::<T>::KittiesCountOverflow);
@@ -211,16 +204,17 @@ pub mod pallet {
             };
             // 获取质押的金额
             let stake_amount = T::StakeForEachKitty::get();
-            // 质押创建者一定的金额
-            T::Currency::reserve(&owner, stake_amount)
-                .map_err(|_| Error::<T>::NotEnoughBalanceForStaking)?;
+            // 质押创建者一定的金额,当余额不足时抛出NotEnoughBalanceForStaking异常
+            T::Currency::reserve(&owner, stake_amount).map_err(|_| Error::<T>::NotEnoughBalanceForStaking)?;
             // 将Kitty加入Kitties集合
             Kitties::<T>::insert(kitty_id, Some(Kitty { dna }));
+            // log
+            log::info!("🎈😺 A kitty is born with ID ➡ {:?}.", kitty_id);
             // 为Kitty绑定所有人
             Owner::<T>::insert(kitty_id, Some(owner.clone()));
-            // 更新下一个Kitty的ID
+            // 更新当前的kitty_id
             KittiesCount::<T>::put(kitty_id + 1u32.into());
-            // 发出创建事件
+            // 发布创建事件
             Self::deposit_event(Event::KittyCreate(owner.clone(), kitty_id));
             Ok(())
         }

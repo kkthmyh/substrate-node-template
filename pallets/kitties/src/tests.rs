@@ -24,10 +24,7 @@ fn create_kitty_failed_count_overflow() {
         KittiesCount::<Test>::put(u32::max_value());
         let account_id = 1;
         // Kitty的ID已经达到最大值
-        assert_noop!(
-			SubstrateKitties::create(Origin::signed(account_id)),
-			Error::<Test>::KittiesCountOverflow
-		);
+        assert_noop!(SubstrateKitties::create(Origin::signed(account_id)),Error::<Test>::KittiesCountOverflow);
     });
 }
 //
@@ -36,10 +33,7 @@ fn create_kitty_failed_not_enough_balance_for_staking() {
     new_test_ext().execute_with(|| {
         // 质押金额不足
         let account_id: u64 = 100;
-        assert_noop!(
-			SubstrateKitties::create(Origin::signed(account_id)),
-			Error::<Test>::NotEnoughBalanceForStaking
-		);
+        assert_noop!(SubstrateKitties::create(Origin::signed(account_id)),Error::<Test>::NotEnoughBalanceForStaking);
     });
 }
 
@@ -72,10 +66,7 @@ fn breed_failed_same_parent() {
         // 创建Kitty1
         assert_ok!(SubstrateKitties::create(Origin::signed(account_id)));
         // 繁殖时父母ID相同
-        assert_noop!(
-			SubstrateKitties::breed(Origin::signed(account_id), kitty_id_1, kitty_id_1),
-			Error::<Test>::SameParentIndex
-		);
+        assert_noop!(SubstrateKitties::breed(Origin::signed(account_id), kitty_id_1, kitty_id_1),Error::<Test>::SameParentIndex);
     });
 }
 
@@ -87,10 +78,7 @@ fn breed_failed_invalid_kitty_index() {
         let kitty_id_1 = 1u32;
         let kitty_id_2 = 2u32;
         // 繁殖时没有找到Id对应的Kitty
-        assert_noop!(
-			SubstrateKitties::breed(Origin::signed(account_id), kitty_id_1, kitty_id_2),
-			Error::<Test>::InvalidKittyIndex
-		);
+        assert_noop!(SubstrateKitties::breed(Origin::signed(account_id), kitty_id_1, kitty_id_2),Error::<Test>::InvalidKittyIndex);
     });
 }
 //
@@ -107,10 +95,7 @@ fn breed_failed_count_overflow() {
         // 创建Kitty2
         assert_ok!(SubstrateKitties::create(Origin::signed(account_id)));
         // 繁殖时Kitty的ID已经达到最大值
-        assert_noop!(
-			SubstrateKitties::breed(Origin::signed(account_id), kitty_id_1, kitty_id_2),
-			Error::<Test>::KittiesCountOverflow
-		);
+        assert_noop!(SubstrateKitties::breed(Origin::signed(account_id), kitty_id_1, kitty_id_2),Error::<Test>::KittiesCountOverflow);
     });
 }
 
@@ -127,10 +112,7 @@ fn breed_failed_not_enough_balance_for_staking() {
         // 创建Kitty2
         assert_ok!(SubstrateKitties::create(Origin::signed(account_id)));
         // 繁殖但token不足
-        assert_noop!(
-			SubstrateKitties::breed(Origin::signed(other_account_id), kitty_id_1, kitty_id_2),
-			Error::<Test>::NotEnoughBalanceForStaking
-		);
+        assert_noop!(SubstrateKitties::breed(Origin::signed(other_account_id), kitty_id_1, kitty_id_2),Error::<Test>::NotEnoughBalanceForStaking);
     });
 }
 
@@ -157,10 +139,7 @@ fn sell_failed_not_owner() {
         let kitty_id = 1u32;
         let price = 100u128;
         assert_ok!(SubstrateKitties::create(Origin::signed(account_id)));
-        assert_noop!(
-			SubstrateKitties::sell(Origin::signed(other_account_id), kitty_id, Some(price)),
-			Error::<Test>::NotOwner
-		);
+        assert_noop!(SubstrateKitties::sell(Origin::signed(other_account_id), kitty_id, Some(price)),Error::<Test>::NotOwner);
     });
 }
 
@@ -189,10 +168,7 @@ fn transfer_failed_not_owner() {
         // 创建Kitty
         assert_ok!(SubstrateKitties::create(Origin::signed(account_id_1)));
         // 不是自己的Kitty
-        assert_noop!(
-			SubstrateKitties::transfer(Origin::signed(account_id_2), account_id_3, kitty_id),
-			Error::<Test>::NotOwner
-		);
+        assert_noop!(SubstrateKitties::transfer(Origin::signed(account_id_2), account_id_3, kitty_id),Error::<Test>::NotOwner);
     });
 }
 
@@ -205,10 +181,7 @@ fn transfer_failed_not_enough_balance_for_staking() {
         // 创建Kitty
         assert_ok!(SubstrateKitties::create(Origin::signed(account_id_1)));
         // 余额不足无法质押
-        assert_noop!(
-			SubstrateKitties::transfer(Origin::signed(account_id_1), account_id_5, kitty_id),
-			Error::<Test>::NotEnoughBalanceForStaking
-		);
+        assert_noop!(SubstrateKitties::transfer(Origin::signed(account_id_1), account_id_5, kitty_id),Error::<Test>::NotEnoughBalanceForStaking);
     });
 }
 
@@ -241,10 +214,7 @@ fn buy_failed_buyer_is_owner() {
         // 卖出Kitty
         assert_ok!(SubstrateKitties::sell(Origin::signed(account_id_1), kitty_id, Some(price)));
         // 购买者和拥有者是同一人
-        assert_noop!(
-			SubstrateKitties::buy(Origin::signed(account_id_1), kitty_id),
-			Error::<Test>::BuyerIsOwner
-		);
+        assert_noop!(SubstrateKitties::buy(Origin::signed(account_id_1), kitty_id),Error::<Test>::BuyerIsOwner);
     });
 }
 
@@ -257,10 +227,7 @@ fn buy_failed_not_for_sell() {
         // 创建Kitty
         assert_ok!(SubstrateKitties::create(Origin::signed(account_id_1)));
         // Kitty未放入代售列表
-        assert_noop!(
-			SubstrateKitties::buy(Origin::signed(account_id_2), kitty_id),
-			Error::<Test>::KittyNotForSell
-		);
+        assert_noop!(SubstrateKitties::buy(Origin::signed(account_id_2), kitty_id),Error::<Test>::KittyNotForSell);
     });
 }
 
@@ -276,9 +243,6 @@ fn buy_failed_buyer_not_enough_balance_for_buying() {
         // 卖出Kitty
         assert_ok!(SubstrateKitties::sell(Origin::signed(account_id_1), kitty_id, Some(price)));
         // 买家余额不够
-        assert_noop!(
-			SubstrateKitties::buy(Origin::signed(account_id_3), kitty_id),
-			Error::<Test>::NotEnoughBalanceForBuying
-		);
+        assert_noop!(SubstrateKitties::buy(Origin::signed(account_id_3), kitty_id),Error::<Test>::NotEnoughBalanceForBuying);
     });
 }
