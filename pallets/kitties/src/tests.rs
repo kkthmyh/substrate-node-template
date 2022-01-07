@@ -21,7 +21,7 @@ fn create_works() {
 #[test]
 fn create_kitty_failed_count_overflow() {
     new_test_ext().execute_with(|| {
-        KittiesCount::<Test>::put(u32::max_value());
+        KittyCnt::<Test>::put(u32::max_value());
         let account_id = 1;
         // Kitty的ID已经达到最大值
         assert_noop!(SubstrateKitties::create(Origin::signed(account_id)),Error::<Test>::KittiesCountOverflow);
@@ -85,7 +85,7 @@ fn breed_failed_invalid_kitty_index() {
 #[test]
 fn breed_failed_count_overflow() {
     new_test_ext().execute_with(|| {
-        KittiesCount::<Test>::put(u32::max_value() - 2);
+        KittyCnt::<Test>::put(u32::max_value() - 2);
         let account_id: u64 = 1;
         // parent kitty
         let kitty_id_1 = u32::max_value() - 1;

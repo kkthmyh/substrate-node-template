@@ -29,8 +29,8 @@ pub mod pallet {
     type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
     #[pallet::storage]
-    #[pallet::getter(fn kitties_count)]
-    pub(super) type KittiesCount<T: Config> = StorageValue<_, T::KittyIndex>;
+    #[pallet::getter(fn kitty_cnt)]
+    pub(super) type KittyCnt<T: Config> = StorageValue<_, T::KittyIndex>;
 
     #[pallet::storage]
     #[pallet::getter(fn kitties)]
@@ -195,7 +195,7 @@ pub mod pallet {
         // 创建kitty时质押一定数量的token
         fn create_kitty_with_stake(owner: &T::AccountId, dna: [u8; 16]) -> DispatchResult {
             // 获取当前的kitty_id
-            let kitty_id = match Self::kitties_count() {
+            let kitty_id = match Self::kitty_cnt() {
                 Some(id) => {
                     ensure!(id != T::KittyIndex::max_value(), Error::<T>::KittiesCountOverflow);
                     id
@@ -213,7 +213,7 @@ pub mod pallet {
             // 为Kitty绑定所有人
             Owner::<T>::insert(kitty_id, Some(owner.clone()));
             // 更新当前的kitty_id
-            KittiesCount::<T>::put(kitty_id + 1u32.into());
+            KittyCnt::<T>::put(kitty_id + 1u32.into());
             // 发布创建事件
             Self::deposit_event(Event::KittyCreate(owner.clone(), kitty_id));
             Ok(())
